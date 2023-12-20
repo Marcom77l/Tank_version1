@@ -1,0 +1,126 @@
+from typing import Any
+from pygame import *
+from random import *
+
+
+wigth = 1000
+hight = 700
+#окно
+window = display.set_mode((wigth, hight))
+display.set_caption('Танки')
+
+backround = transform.scale(image.load('трава.jpg'), (wigth, hight))
+#________________________________________
+
+class Tank(sprite.Sprite):
+    def __init__(self, name, x, y, speed, gem_w, gem_h):
+        super().__init__()
+        self.image = transform.scale(image.load(name), (gem_w, gem_h))
+        self.rect = self.image.get_rect()
+        self.rect.x = x 
+        self.rect.y = y 
+        self.speed = speed
+        
+    def draw(self):
+        window.blit(self.image, (self.rect.x, self.rect.y))
+        
+class Player(Tank):
+    def update(self):
+        self.keys_pressed = key.get_pressed()
+        if self.keys_pressed[K_a] and self.rect.x > wigth*0:
+            self.rect.x -= self.speed
+            self.image = transform.scale(image.load('Игрок_влево.png'), (80, 40))
+        elif self.keys_pressed[K_d] and self.rect.x < wigth-50:
+            self.rect.x += self.speed
+            self.image = transform.scale(image.load('Игрок_вправо.png'), (80, 40))
+        elif self.keys_pressed[K_w] and self.rect.y > hight*0:
+            self.rect.y -= self.speed
+            self.image = transform.scale(image.load('Игрок_вверх.png'), (40, 80))
+        elif self.keys_pressed[K_s] and self.rect.y < hight-95:
+            self.rect.y += self.speed
+            self.image = transform.scale(image.load('Игрок.jpg'), (40, 80))
+        self.draw()
+        
+    def fire(self):
+        bullet = Projectile('Снаряд.png', self.rect.centerx, self.rect.top, 1, 10, 20)
+        bullets.add(bullet)
+        
+    
+class Enemy(Tank):
+    def update(self):
+        self.keys_pressed = key.get_pressed()
+        if self.keys_pressed[K_LEFT] and self.rect.x > wigth*0:
+            self.rect.x -= self.speed
+            self.image = transform.scale(image.load('Враг_л.png'), (80, 40))
+        elif self.keys_pressed[K_RIGHT] and self.rect.x < wigth-50:
+            self.rect.x += self.speed
+            self.image = transform.scale(image.load('Враг_п.png'), (80, 40))
+        elif self.keys_pressed[K_UP] and self.rect.y > hight*0:
+            self.rect.y -= self.speed
+            self.image = transform.scale(image.load('Враг_в.png'), (40, 80))
+        elif self.keys_pressed[K_DOWN] and self.rect.y < hight-95:
+            self.rect.y += self.speed
+            self.image = transform.scale(image.load('Враг_н.png'), (40, 80))
+        self.draw()
+
+    def fire(self):
+        bullet = Projectile('Снаряд.png', self.rect.centerx, self.rect.top, 1, 10, 20)
+        bullets.add(bullet)
+        
+class Projectile(Tank):
+    def update(self):
+        if self.image != 'Игрок_вверх.png':
+            self.rect.y += self.speed
+            if self.rect.y < 0:
+                self.kill()
+        
+
+    
+player = Player('Игрок.jpg', 100, 100, 5, 40, 80)
+enemy = Enemy('Враг_в.png', 50, 500, 5, 40, 80)
+    
+#время
+clock = time.Clock()
+FPS = 60
+#________________________________________
+
+house = sprite.Group()
+for hous in range(1, 20):
+    home = Tank('дом.png', randint(50, wigth-50), randint(50, hight-50), 0, 120, 120)
+    house.add(home)
+#Правда
+game = True
+finish = False
+#________________________________________
+
+bullets = sprite.Group()
+bullets1 = sprite.Group()
+
+#Геймплей
+while game:
+    for e in event.get():
+        if e.type ==  QUIT:
+            game = False
+        elif e.type == KEYDOWN:
+            if  e.key == K_SPACE:
+                player.fire()
+            elif e.key == K_RSHIFT:
+                enemy.fire()
+    if not finish:
+        window.blit(backround, (0, 0))
+        
+        player.update()
+        enemy.update()
+        house.draw(window)
+        bullets.update()
+        bullets.draw(window)
+        display.update()
+        collides = sprite.groupcollide(house, bullets, True, True)
+        for c in collides:
+            pass
+
+        if sprite.collide_rect(player, enemy):
+            finish = True
+#________________________________________
+    
+clock.tick(FPS)
